@@ -26,7 +26,13 @@ Questions the data can't answer ("total megawatts in Virginia?") get a plain
 | Table | Rows | Source |
 |---|---|---|
 | `datacenters` | 18,110 facilities, 4,182 operators, 6,131 with coordinates | [Global Data Center Map](https://github.com/Ringmast4r/Global-Data-Center-Map) (Ringmast4r) |
-| `alpr_cities` | 2,401 US cities with license-plate-reader counts by vendor | [Finding Flock](https://www.findingflock.com) / OpenStreetMap (ODbL) |
+| `alpr_cities` | 2,401 US cities with license-plate-reader counts by vendor, plus 2023 population and cameras per 10k residents | [Finding Flock](https://www.findingflock.com) / OpenStreetMap (ODbL); [Census PEP](https://www.census.gov/programs-surveys/popest.html) |
+| `datacenter_landcover` | developed / forest / wetland / water share within 500 m of the 59 sites inside the DC-area tile | [NOAA C-CAP 2021](https://coast.noaa.gov/digitalcoast/data/ccapregional.html) 30 m land cover |
+
+Plus a raster tool, `land_cover_near(lat, lon, radius_m)`, that samples the C-CAP
+tile at any point so the agent can answer "what surrounds this site?" for places
+that aren't data centers. Vector questions go to DuckDB; raster questions go to
+rasterio/numpy; the model only ever sees the summarized result.
 
 The ETL ([`etl/build_db.py`](etl/build_db.py)) does the unglamorous part: the raw
 `state` column mixes `TX`, `Texas`, and city names like `Phoenix`; operators appear
@@ -37,7 +43,7 @@ and to say how many rows were excluded.
 
 ## Evaluation
 
-[`eval/cases.json`](eval/cases.json) holds 20 questions with gold answers. Gold
+[`eval/cases.json`](eval/cases.json) holds 24 questions with gold answers. Gold
 values are computed from the database at run time, so the eval stays valid if the
 data is rebuilt. Checks cover: the right number appears in the answer (with
 tolerance for percentages), the right entity is named, a map layer is produced
@@ -52,13 +58,15 @@ Latest run (`claude-opus-5-5`, medium effort, 2026-10-14):
 
 | Metric | Value |
 |---|---|
-| Cases passed | **20 / 20** |
-| Wall time | 236 s (12 s median per question) |
-| Tokens | 171k input · 18k output (≈ $1.05 for the whole run) |
+| Cases passed | **24 / 24** |
+| Wall time | ~280 s (11 s median per question) |
+| Tokens | 208k input · 20k output (≈ $1.25 for the whole run) |
 | SQL retries | 3 cases needed one failed query before recovering |
 
 Case types: counts and aggregates (8), spatial joins and distance (3), cross-dataset
-joins (2), map-layer requests (3), data-quality questions (2), unanswerable (2).
+joins (3), per-capita with Census population (2), raster land cover (3, including one
+that must be declined because the point is outside the tile), map-layer requests (3),
+data-quality questions (2), unanswerable (1).
 The eval caught a real ETL bug on its first run: shell-company operator names like
 `DC 11 DE LLC (Amazon)` weren't mapped to AWS. The agent found them with a `LIKE`
 query; the gold query didn't. Fixed in the ETL, and the gold now agrees.

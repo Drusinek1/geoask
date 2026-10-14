@@ -32,7 +32,9 @@ EXAMPLES = [
     "Map the 10 US cities with the most ALPR cameras.",
     "Which cities have both a lot of data centers and a lot of license plate readers?",
     "Where are Google's data centers in Europe?",
-    "What share of ALPR cameras are made by Flock, and which states lean most on Flock?",
+    "Among cities over 100k residents, which have the most license plate readers per 10,000 people?",
+    "Which DC-area data centers sit in the least developed surroundings? Map them.",
+    "What's the land cover around the Pentagon?",
 ]
 
 

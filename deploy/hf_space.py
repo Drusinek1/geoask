@@ -16,7 +16,8 @@ from pathlib import Path
 from huggingface_hub import HfApi
 
 ROOT = Path(__file__).resolve().parent.parent
-INCLUDE = ["app.py", "requirements.txt", "Dockerfile", "geoask", "etl", "static", "data/raw", "eval/cases.json", "eval/run_eval.py"]
+INCLUDE = ["app.py", "requirements.txt", "Dockerfile", "geoask", "etl", "static", "data/raw",
+           "eval/cases.json", "eval/run_eval.py"]  # data/raw includes the C-CAP tile and census CSV
 
 SPACE_FRONTMATTER = """---
 title: GeoAsk
