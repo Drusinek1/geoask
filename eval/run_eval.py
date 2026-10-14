@@ -8,6 +8,7 @@ Each case in cases.json has a question plus one or more checks:
   gold_text_sql      - like gold_text but the string comes from a query
   expect_layer       - whether a map layer should have been produced
   expect_layer_rows  - exact feature count on the first layer
+  expect_tool        - a named tool must have been called successfully
   expect_refusal_phrase - for unanswerable questions: answer must contain one of these
 
 Gold values are computed from the database at run time, so the eval stays
@@ -71,6 +72,10 @@ def check_case(case: dict, answer, db: GeoDB) -> tuple[bool, list[str]]:
         if any(s.tool == "show_on_map" for s in answer.steps):
             ok = False
             reasons.append("should not map an unanswerable question")
+
+    if case.get("expect_tool") and not any(s.tool == case["expect_tool"] and s.ok for s in answer.steps):
+        ok = False
+        reasons.append(f"expected a successful {case['expect_tool']} call")
 
     has_layer = len(answer.layers) > 0
     if case.get("expect_layer") and not has_layer:

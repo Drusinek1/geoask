@@ -116,9 +116,38 @@
     "expect_layer": false
   },
   {
-    "id": "unanswerable_population",
-    "question": "Which city has the most ALPR cameras per resident?",
-    "expect_refusal_phrase": ["population", "resident"],
+    "id": "per_capita_top",
+    "question": "Among cities with at least 50,000 residents, which has the most ALPR cameras per 10,000 residents?",
+    "gold_sql": "SELECT cameras_per_10k_residents FROM alpr_cities WHERE population >= 50000 ORDER BY cameras_per_10k_residents DESC LIMIT 1",
+    "gold_text_sql": "SELECT city FROM alpr_cities WHERE population >= 50000 ORDER BY cameras_per_10k_residents DESC LIMIT 1",
+    "tolerance": 0.2,
+    "expect_layer": false
+  },
+  {
+    "id": "population_missing",
+    "question": "How many cities in the ALPR dataset have no population figure?",
+    "gold_sql": "SELECT count(*) FROM alpr_cities WHERE population IS NULL",
+    "expect_layer": false
+  },
+  {
+    "id": "landcover_most_forested",
+    "question": "Of the data centers with land-cover data, which one has the most forest within 500 m, and what percentage?",
+    "gold_sql": "SELECT forest_pct FROM datacenter_landcover ORDER BY forest_pct DESC LIMIT 1",
+    "gold_text_sql": "SELECT d.name FROM datacenter_landcover l JOIN datacenters d ON d.id = l.datacenter_id ORDER BY l.forest_pct DESC LIMIT 1",
+    "tolerance": 0.2,
+    "expect_layer": false
+  },
+  {
+    "id": "landcover_tool_point",
+    "question": "What is the land cover within 300 m of the Lincoln Memorial (38.8893, -77.0502)?",
+    "gold_text": ["Developed", "developed"],
+    "expect_tool": "land_cover_near",
+    "expect_layer": false
+  },
+  {
+    "id": "landcover_outside",
+    "question": "What is the land cover around the data centers in Dallas?",
+    "expect_refusal_phrase": ["DC", "Washington", "Virginia", "Maryland", "not cover", "only cover", "outside"],
     "expect_layer": false
   },
   {

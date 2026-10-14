@@ -13,10 +13,13 @@ import argparse
 import json
 import re
 import sqlite3
+import sys
 from pathlib import Path
 
 import duckdb
 import pandas as pd
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))  # for geoask.raster
 
 US_STATES = {
     "AL": "Alabama", "AK": "Alaska", "AZ": "Arizona", "AR": "Arkansas", "CA": "California",
@@ -117,12 +120,46 @@ def load_alpr(geojson_path: Path) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+def load_population(csv_path: Path) -> pd.DataFrame:
+    df = pd.read_csv(csv_path, dtype={"geoid": str})
+    return df[["geoid", "population", "year"]].rename(columns={"year": "population_year"})
+
+
+def land_cover_for_datacenters(dc: pd.DataFrame) -> pd.DataFrame | None:
+    """Developed-land share within 500 m of each data center the C-CAP tile covers."""
+    try:
+        from geoask.raster import LandCover
+        lc = LandCover()
+    except FileNotFoundError:
+        return None
+    cov = lc.coverage
+    inside = dc[dc["has_coords"] & dc["latitude"].between(cov.south, cov.north)
+                & dc["longitude"].between(cov.west, cov.east)]
+    rows = []
+    for r in inside.itertuples():
+        try:
+            s = lc.summary(float(r.latitude), float(r.longitude), 500)
+        except ValueError:
+            continue
+        g = s["groups"]
+        rows.append({"datacenter_id": r.id, "developed_pct": g.get("Developed", 0.0),
+                     "forest_pct": g.get("Forest", 0.0), "wetland_pct": g.get("Wetland", 0.0),
+                     "water_pct": g.get("Water", 0.0), "agriculture_pct": g.get("Agriculture", 0.0),
+                     "dominant_class": s["classes"][0]["class"], "radius_m": 500, "ccap_year": lc.year})
+    return pd.DataFrame(rows)
+
+
 def build(raw: Path, out: Path) -> None:
     out.parent.mkdir(parents=True, exist_ok=True)
     if out.exists():
         out.unlink()
     dc = load_datacenters(raw / "datacenters.db")
     alpr = load_alpr(raw / "findingflock-cameras-by-city.geojson")
+    pop_path = raw / "census_place_population.csv"
+    if pop_path.exists():
+        alpr = alpr.merge(load_population(pop_path), on="geoid", how="left")
+        alpr["cameras_per_10k_residents"] = (10_000 * alpr["cameras"] / alpr["population"]).round(2)
+    landcover = land_cover_for_datacenters(dc)
 
     con = duckdb.connect(str(out))
     con.execute("INSTALL spatial; LOAD spatial;")
@@ -144,11 +181,17 @@ def build(raw: Path, out: Path) -> None:
         SELECT * FROM (VALUES %s) AS t(state_code, state_name)
     """ % ",".join(f"('{k}','{v}')" for k, v in US_STATES.items()))
 
+    if landcover is not None and len(landcover):
+        con.register("lc_df", landcover)
+        con.execute("CREATE TABLE datacenter_landcover AS SELECT * FROM lc_df")
+
     n_dc = con.execute("SELECT count(*), sum(has_coords::int) FROM datacenters").fetchone()
-    n_alpr = con.execute("SELECT count(*) FROM alpr_cities").fetchone()[0]
+    n_alpr = con.execute("SELECT count(*), count(population) FROM alpr_cities").fetchone()
+    n_lc = len(landcover) if landcover is not None else 0
     con.close()
     print(f"datacenters: {n_dc[0]} rows, {n_dc[1]} with coordinates")
-    print(f"alpr_cities: {n_alpr} rows")
+    print(f"alpr_cities: {n_alpr[0]} rows, {n_alpr[1]} with population")
+    print(f"datacenter_landcover: {n_lc} rows")
     print(f"wrote {out}")
 
 

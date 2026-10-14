@@ -1,0 +1,265 @@
+<PAMDataset>
+  <PAMRasterBand band="1">
+    <Description>2021_CCAP</Description>
+    <Metadata>
+      <MDI key="STATISTICS_MINIMUM">2</MDI>
+      <MDI key="STATISTICS_MAXIMUM">22</MDI>
+      <MDI key="STATISTICS_MEAN">7.2299758812653</MDI>
+      <MDI key="STATISTICS_STDDEV">4.0962733769803</MDI>
+      <MDI key="STATISTICS_VALID_PERCENT">72.93</MDI>
+    </Metadata>
+    <ColorInterp>Palette</ColorInterp>
+    <ColorTable>
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="0" c2="0" c3="0" c4="255" />
+      <Entry c1="242" c2="242" c3="242" c4="255" />
+      <Entry c1="168" c2="153" c3="168" c4="255" />
+      <Entry c1="143" c2="117" c3="130" c4="255" />
+      <Entry c1="194" c2="204" c3="56" c4="255" />
+      <Entry c1="84" c2="33" c3="0" c4="255" />
+      <Entry c1="194" c2="161" c3="79" c4="255" />
+      <Entry c1="242" c2="186" c3="135" c4="255" />
+      <Entry c1="0" c2="242" c3="0" c4="255" />
+      <Entry c1="0" c2="59" c3="0" c4="255" />
+      <Entry c1="8" c2="161" c3="59" c4="255" />
+      <Entry c1="110" c2="110" c3="0" c4="255" />
+      <Entry c1="0" c2="92" c3="92" c4="255" />
+      <Entry c1="242" c2="110" c3="0" c4="255" />
+      <Entry c1="242" c2="0" c3="242" c4="255" />
+      <Entry c1="61" c2="0" c3="61" c4="255" />
+      <Entry c1="110" c2="0" c3="110" c4="255" />
+      <Entry c1="176" c2="0" c3="176" c4="255" />
+      <Entry c1="0" c2="242" c3="242" c4="255" />
+      <Entry c1="242" c2="242" c3="0" c4="255" />
+      <Entry c1="0" c2="0" c3="120" c4="255" />
+      <Entry c1="0" c2="0" c3="242" c4="255" />
+      <Entry c1="102" c2="117" c3="219" c4="255" />
+      <Entry c1="0" c2="0" c3="0" c4="0" />
+      <Entry c1="171" c2="250" c3="240" c4="255" />
+    </ColorTable>
+    <GDALRasterAttributeTable tableType="thematic">
+      <FieldDefn index="0">
+        <Name>Value</Name>
+        <Type typeAsString="Integer">0</Type>
+        <Usage usageAsString="MinMax">5</Usage>
+      </FieldDefn>
+      <FieldDefn index="1">
+        <Name>Red</Name>
+        <Type typeAsString="Integer">0</Type>
+        <Usage usageAsString="Red">6</Usage>
+      </FieldDefn>
+      <FieldDefn index="2">
+        <Name>Green</Name>
+        <Type typeAsString="Integer">0</Type>
+        <Usage usageAsString="Green">7</Usage>
+      </FieldDefn>
+      <FieldDefn index="3">
+        <Name>Blue</Name>
+        <Type typeAsString="Integer">0</Type>
+        <Usage usageAsString="Blue">8</Usage>
+      </FieldDefn>
+      <FieldDefn index="4">
+        <Name>Alpha</Name>
+        <Type typeAsString="Integer">0</Type>
+        <Usage usageAsString="Alpha">9</Usage>
+      </FieldDefn>
+      <FieldDefn index="5">
+        <Name>Description</Name>
+        <Type typeAsString="String">2</Type>
+        <Usage usageAsString="Name">2</Usage>
+      </FieldDefn>
+      <Row index="0">
+        <F>1</F>
+        <F>0</F>
+        <F>0</F>
+        <F>0</F>
+        <F>255</F>
+        <F>Background</F>
+      </Row>
+      <Row index="1">
+        <F>2</F>
+        <F>242</F>
+        <F>242</F>
+        <F>242</F>
+        <F>255</F>
+        <F>High Intensity Developed</F>
+      </Row>
+      <Row index="2">
+        <F>3</F>
+        <F>168</F>
+        <F>153</F>
+        <F>168</F>
+        <F>255</F>
+        <F>Medium Intensity Developed</F>
+      </Row>
+      <Row index="3">
+        <F>4</F>
+        <F>143</F>
+        <F>117</F>
+        <F>130</F>
+        <F>255</F>
+        <F>Low Intensity Developed</F>
+      </Row>
+      <Row index="4">
+        <F>5</F>
+        <F>194</F>
+        <F>204</F>
+        <F>56</F>
+        <F>255</F>
+        <F>Developed Open Space</F>
+      </Row>
+      <Row index="5">
+        <F>6</F>
+        <F>84</F>
+        <F>33</F>
+        <F>0</F>
+        <F>255</F>
+        <F>Cultivated</F>
+      </Row>
+      <Row index="6">
+        <F>7</F>
+        <F>194</F>
+        <F>161</F>
+        <F>79</F>
+        <F>255</F>
+        <F>Pasture/Hay</F>
+      </Row>
+      <Row index="7">
+        <F>8</F>
+        <F>242</F>
+        <F>186</F>
+        <F>135</F>
+        <F>255</F>
+        <F>Grassland</F>
+      </Row>
+      <Row index="8">
+        <F>9</F>
+        <F>0</F>
+        <F>242</F>
+        <F>0</F>
+        <F>255</F>
+        <F>Deciduous Forest</F>
+      </Row>
+      <Row index="9">
+        <F>10</F>
+        <F>0</F>
+        <F>59</F>
+        <F>0</F>
+        <F>255</F>
+        <F>Evergreen Forest</F>
+      </Row>
+      <Row index="10">
+        <F>11</F>
+        <F>8</F>
+        <F>161</F>
+        <F>59</F>
+        <F>255</F>
+        <F>Mixed Forest</F>
+      </Row>
+      <Row index="11">
+        <F>12</F>
+        <F>110</F>
+        <F>110</F>
+        <F>0</F>
+        <F>255</F>
+        <F>Scrub/Shrub</F>
+      </Row>
+      <Row index="12">
+        <F>13</F>
+        <F>0</F>
+        <F>92</F>
+        <F>92</F>
+        <F>255</F>
+        <F>Palustrine Forested Wetland</F>
+      </Row>
+      <Row index="13">
+        <F>14</F>
+        <F>242</F>
+        <F>110</F>
+        <F>0</F>
+        <F>255</F>
+        <F>Palustrine Scrub/Shrub Wetland</F>
+      </Row>
+      <Row index="14">
+        <F>15</F>
+        <F>242</F>
+        <F>0</F>
+        <F>242</F>
+        <F>255</F>
+        <F>Palustrine Emergent Wetland</F>
+      </Row>
+      <Row index="15">
+        <F>16</F>
+        <F>61</F>
+        <F>0</F>
+        <F>61</F>
+        <F>255</F>
+        <F>Estuarine Forested Wetland</F>
+      </Row>
+      <Row index="16">
+        <F>17</F>
+        <F>110</F>
+        <F>0</F>
+        <F>110</F>
+        <F>255</F>
+        <F>Estuarine Scrub/Shrub Wetland</F>
+      </Row>
+      <Row index="17">
+        <F>18</F>
+        <F>176</F>
+        <F>0</F>
+        <F>176</F>
+        <F>255</F>
+        <F>Estuarine Emergent Wetland</F>
+      </Row>
+      <Row index="18">
+        <F>19</F>
+        <F>0</F>
+        <F>242</F>
+        <F>242</F>
+        <F>255</F>
+        <F>Unconsolidated Shore</F>
+      </Row>
+      <Row index="19">
+        <F>20</F>
+        <F>242</F>
+        <F>242</F>
+        <F>0</F>
+        <F>255</F>
+        <F>Bare Land</F>
+      </Row>
+      <Row index="20">
+        <F>21</F>
+        <F>0</F>
+        <F>0</F>
+        <F>120</F>
+        <F>255</F>
+        <F>Water</F>
+      </Row>
+      <Row index="21">
+        <F>22</F>
+        <F>0</F>
+        <F>0</F>
+        <F>242</F>
+        <F>255</F>
+        <F>Palustrine Aquatic Bed</F>
+      </Row>
+      <Row index="22">
+        <F>23</F>
+        <F>102</F>
+        <F>117</F>
+        <F>219</F>
+        <F>255</F>
+        <F>Estuarine Aquatic Bed</F>
+      </Row>
+      <Row index="23">
+        <F>25</F>
+        <F>171</F>
+        <F>250</F>
+        <F>240</F>
+        <F>255</F>
+        <F>Snow/Ice</F>
+      </Row>
+    </GDALRasterAttributeTable>
+  </PAMRasterBand>
+</PAMDataset>

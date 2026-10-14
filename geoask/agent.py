@@ -18,6 +18,7 @@ from typing import Any
 import anthropic
 
 from .db import GeoDB, QueryError
+from .raster import LandCover
 
 MODEL = "claude-opus-5-5"
 MAX_TURNS = 12
@@ -41,7 +42,9 @@ Spatial SQL notes (DuckDB spatial):
 
 Data notes:
 - datacenters: 18,110 facilities worldwide from the Global Data Center Map (Ringmast4r). Coordinates vary in precision (building, city, or country centroid).
-- alpr_cities: 2,401 US cities with automated license plate reader camera counts by vendor (Finding Flock / OpenStreetMap).
+- alpr_cities: 2,401 US cities with automated license plate reader camera counts by vendor (Finding Flock / OpenStreetMap). `population` (Census 2023 estimate) and `cameras_per_10k_residents` are present for incorporated places; NULL for census-designated places, so filter on population IS NOT NULL for per-capita questions and say how many cities were excluded.
+- datacenter_landcover: for the ~60 data centers inside the NOAA C-CAP 2021 land-cover tile (Washington DC, Reston/Herndon VA, central Maryland; Ashburn and Sterling fall just outside its western edge), the share of developed, forest, wetland, water and agricultural land within 500 m. Join on datacenter_id = datacenters.id.
+- land_cover_near: samples the same raster at any point inside that tile. Use it for "what surrounds this site" questions; outside the tile it returns an error, so say the data only covers the DC area.
 
 Answer style: lead with the direct answer, then the key numbers, then one line of caveats. Be concise. Do not paste SQL into the answer; the UI already shows it."""
 
@@ -81,6 +84,22 @@ TOOLS: list[dict[str, Any]] = [
                 },
             },
             "required": ["sql", "layer_name", "style"],
+            "additionalProperties": False,
+        },
+        "strict": True,
+    },
+    {
+        "name": "land_cover_near",
+        "description": "Sample NOAA C-CAP 2021 land cover (30 m raster) within a radius of a point and return the share of each class (developed, forest, wetland, water...). Only covers the Washington DC / Northern Virginia / central Maryland tile (about 77.5W-76.5W, 38.5N-39.2N); other points return an error.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "latitude": {"type": "number"},
+                "longitude": {"type": "number"},
+                "radius_m": {"type": "number", "description": "Radius in meters, 30-5000. Default 500."},
+                "label": {"type": "string", "description": "What this point is, e.g. 'Equinix DC2, Ashburn'."},
+            },
+            "required": ["latitude", "longitude", "radius_m", "label"],
             "additionalProperties": False,
         },
         "strict": True,
@@ -127,11 +146,42 @@ class Answer:
 
 class GeoAskAgent:
     def __init__(self, db: GeoDB, client: anthropic.Anthropic | None = None, model: str = MODEL,
-                 effort: str = "medium"):
+                 effort: str = "medium", landcover: LandCover | None = None):
         self.db = db
         self.client = client or anthropic.Anthropic()
         self.model = model
         self.effort = effort
+        if landcover is None:
+            try:
+                landcover = LandCover()
+            except FileNotFoundError:
+                landcover = None
+        self.landcover = landcover
+
+    def _tool_land_cover_near(self, inp: dict, steps: list[Step], layers: list[Layer]) -> str:
+        t0 = time.perf_counter()
+        if self.landcover is None:
+            raise QueryError("land cover raster is not available in this deployment")
+        try:
+            s = self.landcover.summary(float(inp["latitude"]), float(inp["longitude"]), float(inp["radius_m"]))
+        except ValueError as e:
+            steps.append(Step(tool="land_cover_near", input=inp, ok=False, error=str(e),
+                              elapsed_ms=int((time.perf_counter() - t0) * 1000)))
+            raise QueryError(str(e)) from e
+        preview = [{"group": k, "pct": v} for k, v in s["groups"].items()]
+        steps.append(Step(tool="land_cover_near", input=inp, ok=True, row_count=len(s["classes"]),
+                          columns=["group", "pct"], preview=preview,
+                          elapsed_ms=int((time.perf_counter() - t0) * 1000)))
+        layers.append(Layer(
+            name=inp["label"], style="point", sql="",
+            geojson={"type": "FeatureCollection", "features": [{
+                "type": "Feature",
+                "geometry": {"type": "Point", "coordinates": [s["lon"], s["lat"]]},
+                "properties": {"label": inp["label"], "radius_m": s["radius_m"],
+                               **{f"{k} %": v for k, v in s["groups"].items()}},
+            }]},
+        ))
+        return json.dumps(s)
 
     # -- tool implementations -----------------------------------------------
 
@@ -190,6 +240,7 @@ class GeoAskAgent:
             "get_schema": self._tool_get_schema,
             "run_sql": self._tool_run_sql,
             "show_on_map": self._tool_show_on_map,
+            "land_cover_near": self._tool_land_cover_near,
         }
 
         response = None
