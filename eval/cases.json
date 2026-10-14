@@ -1,0 +1,131 @@
+[
+  {
+    "id": "count_total",
+    "question": "How many data centers are in the database in total?",
+    "gold_sql": "SELECT count(*) FROM datacenters",
+    "expect_layer": false
+  },
+  {
+    "id": "count_with_coords",
+    "question": "How many data centers have GPS coordinates?",
+    "gold_sql": "SELECT count(*) FROM datacenters WHERE has_coords",
+    "expect_layer": false
+  },
+  {
+    "id": "top_state_coords",
+    "question": "Which US state has the most data centers with coordinates, and how many?",
+    "gold_sql": "SELECT count(*) FROM datacenters WHERE country='United States' AND has_coords AND state_code='VA'",
+    "gold_text": ["Virginia", "VA"],
+    "expect_layer": false
+  },
+  {
+    "id": "equinix_va",
+    "question": "How many Equinix facilities are listed in Virginia?",
+    "gold_sql": "SELECT count(*) FROM datacenters WHERE operator='Equinix' AND state_code='VA'",
+    "expect_layer": false
+  },
+  {
+    "id": "top_operator",
+    "question": "Which operator runs the most data centers worldwide?",
+    "gold_sql": "SELECT count(*) FROM datacenters WHERE operator='Amazon AWS'",
+    "gold_text": ["Amazon", "AWS"],
+    "expect_layer": false
+  },
+  {
+    "id": "countries_count",
+    "question": "How many distinct countries have at least one data center?",
+    "gold_sql": "SELECT count(DISTINCT country) FROM datacenters WHERE country IS NOT NULL",
+    "expect_layer": false
+  },
+  {
+    "id": "germany_count",
+    "question": "How many data centers are in Germany?",
+    "gold_sql": "SELECT count(*) FROM datacenters WHERE country='Germany'",
+    "expect_layer": false
+  },
+  {
+    "id": "aws_near_msft",
+    "question": "How many AWS data centers are within 50 km of a Microsoft data center?",
+    "gold_sql": "SELECT count(DISTINCT a.id) FROM datacenters a JOIN datacenters m ON a.operator='Amazon AWS' AND m.operator='Microsoft' AND a.has_coords AND m.has_coords AND ST_Distance_Sphere(a.geom, m.geom) < 50000",
+    "expect_layer": false
+  },
+  {
+    "id": "alpr_top_city",
+    "question": "Which US city has the most ALPR cameras, and how many?",
+    "gold_sql": "SELECT max(cameras) FROM alpr_cities",
+    "gold_text": ["Houston"],
+    "expect_layer": false
+  },
+  {
+    "id": "alpr_total",
+    "question": "How many ALPR cameras are there in total across all cities in the dataset?",
+    "gold_sql": "SELECT sum(cameras) FROM alpr_cities",
+    "expect_layer": false
+  },
+  {
+    "id": "flock_share",
+    "question": "What share of all ALPR cameras are made by Flock? Give a percentage.",
+    "gold_sql": "SELECT round(100.0 * sum(flock) / sum(cameras), 0) FROM alpr_cities",
+    "tolerance": 1.0,
+    "expect_layer": false
+  },
+  {
+    "id": "alpr_density_big",
+    "question": "Among cities with at least 100 square miles of land, which has the highest ALPR camera density per square mile?",
+    "gold_sql": "SELECT cameras_per_sq_mi FROM alpr_cities WHERE land_sq_mi >= 100 ORDER BY cameras_per_sq_mi DESC LIMIT 1",
+    "gold_text_sql": "SELECT city FROM alpr_cities WHERE land_sq_mi >= 100 ORDER BY cameras_per_sq_mi DESC LIMIT 1",
+    "tolerance": 0.05,
+    "expect_layer": false
+  },
+  {
+    "id": "dc_in_dallas_bbox",
+    "question": "How many data centers with coordinates fall inside the Dallas city bounding box?",
+    "gold_sql": "SELECT count(*) FROM datacenters d JOIN alpr_cities c ON c.city='Dallas' AND c.state_code='TX' AND d.has_coords AND ST_Within(d.geom, c.bbox_geom)",
+    "expect_layer": false
+  },
+  {
+    "id": "states_no_alpr",
+    "question": "How many US states (including DC) have no cities in the ALPR camera dataset?",
+    "gold_sql": "SELECT count(*) FROM us_states s WHERE s.state_code <> 'PR' AND NOT EXISTS (SELECT 1 FROM alpr_cities c WHERE c.state_code = s.state_code)",
+    "expect_layer": false
+  },
+  {
+    "id": "map_texas_dcs",
+    "question": "Show me all data centers in Texas on a map. How many are there with coordinates?",
+    "gold_sql": "SELECT count(*) FROM datacenters WHERE state_code='TX' AND has_coords",
+    "expect_layer": true
+  },
+  {
+    "id": "map_alpr_top10",
+    "question": "Map the 10 US cities with the most ALPR cameras.",
+    "gold_sql": "SELECT max(cameras) FROM alpr_cities",
+    "expect_layer": true,
+    "expect_layer_rows": 10
+  },
+  {
+    "id": "map_google_europe",
+    "question": "Where are Google's data centers in Europe? Put them on a map.",
+    "gold_sql": "SELECT count(*) FROM datacenters WHERE operator='Google' AND has_coords AND country IN ('Germany','France','Netherlands','Ireland','United Kingdom','Belgium','Finland','Denmark','Spain','Italy','Poland','Sweden','Switzerland','Austria','Norway','Portugal')",
+    "tolerance": 3,
+    "expect_layer": true
+  },
+  {
+    "id": "unanswerable_power",
+    "question": "What is the total power capacity in megawatts of all data centers in Virginia?",
+    "expect_refusal_phrase": ["not", "no "],
+    "expect_layer": false
+  },
+  {
+    "id": "unanswerable_population",
+    "question": "Which city has the most ALPR cameras per resident?",
+    "expect_refusal_phrase": ["population", "resident"],
+    "expect_layer": false
+  },
+  {
+    "id": "coord_quality",
+    "question": "What fraction of data centers in China have coordinates?",
+    "gold_sql": "SELECT round(100.0 * count(*) FILTER (WHERE has_coords) / count(*), 0) FROM datacenters WHERE country='China'",
+    "tolerance": 1.0,
+    "expect_layer": false
+  }
+]

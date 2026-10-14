@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GeoAsk</title>
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<style>
+  :root {
+    --bg: #ffffff; --panel: #f6f7f9; --border: #e2e5ea; --text: #15181d; --muted: #6b7280;
+    --accent: #1f6feb; --ok: #1a7f37; --err: #c62828; --code: #f0f2f5;
+    --layer-0: #1f6feb; --layer-1: #d9480f; --layer-2: #2b8a3e; --layer-3: #862e9c;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0f1216; --panel: #161b22; --border: #2a313b; --text: #e6e8eb; --muted: #9aa3ad;
+      --accent: #58a6ff; --ok: #3fb950; --err: #ff7b72; --code: #1e242c;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0f1216; --panel: #161b22; --border: #2a313b; --text: #e6e8eb; --muted: #9aa3ad;
+    --accent: #58a6ff; --ok: #3fb950; --err: #ff7b72; --code: #1e242c;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
+    font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  #app { display: grid; grid-template-columns: 440px 1fr; height: 100%; }
+  #panel { display: flex; flex-direction: column; border-right: 1px solid var(--border); background: var(--panel); min-width: 0; }
+  header { padding: 16px 16px 8px; }
+  header h1 { margin: 0; font-size: 20px; letter-spacing: -0.01em; }
+  header p { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+  form { padding: 8px 16px; display: flex; gap: 8px; }
+  textarea { flex: 1; resize: none; height: 64px; padding: 10px 12px; border: 1px solid var(--border);
+    border-radius: 8px; background: var(--bg); color: var(--text); font: inherit; }
+  button { padding: 0 16px; border: 0; border-radius: 8px; background: var(--accent); color: #fff; font: inherit; font-weight: 600; cursor: pointer; }
+  button:disabled { opacity: .5; cursor: default; }
+  #examples { padding: 0 16px 8px; display: flex; flex-wrap: wrap; gap: 6px; }
+  #examples button { background: var(--bg); color: var(--text); border: 1px solid var(--border); font-weight: 400; font-size: 12px; padding: 4px 10px; border-radius: 999px; text-align: left; }
+  #out { flex: 1; overflow: auto; padding: 8px 16px 24px; }
+  .answer { white-space: pre-wrap; margin-bottom: 16px; }
+  .answer table { border-collapse: collapse; margin: 8px 0; font-size: 13px; }
+  .answer td, .answer th { border: 1px solid var(--border); padding: 3px 8px; text-align: left; }
+  .trace h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 16px 0 8px; }
+  .step { border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px; background: var(--bg); }
+  .step summary { padding: 8px 12px; cursor: pointer; display: flex; gap: 10px; align-items: baseline; font-size: 13px; }
+  .step summary .tool { font-weight: 600; }
+  .step summary .meta { color: var(--muted); margin-left: auto; white-space: nowrap; }
+  .step .ok { color: var(--ok); } .step .err { color: var(--err); }
+  .step pre { margin: 0; padding: 10px 12px; background: var(--code); font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; white-space: pre-wrap; word-break: break-word; border-top: 1px solid var(--border); }
+  .step .preview { font-size: 12px; overflow: auto; border-top: 1px solid var(--border); }
+  .step .preview table { border-collapse: collapse; width: 100%; }
+  .step .preview th, .step .preview td { padding: 3px 8px; border-bottom: 1px solid var(--border); text-align: left; white-space: nowrap; }
+  .foot { color: var(--muted); font-size: 12px; margin-top: 12px; }
+  .status { color: var(--muted); font-size: 13px; padding: 8px 0; }
+  .error { color: var(--err); }
+  #map { height: 100%; min-height: 320px; }
+  .legend { position: absolute; top: 12px; right: 12px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; font-size: 13px; z-index: 2; }
+  .legend .sw { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+  .maplibregl-popup-content { color: #15181d; font-size: 12px; }
+  .credit { position: absolute; bottom: 4px; left: 8px; font-size: 11px; color: #444; background: rgba(255,255,255,.75); padding: 2px 6px; border-radius: 4px; z-index: 2; }
+  .credit a { color: inherit; }
+  @media (max-width: 860px) {
+    #app { grid-template-columns: 1fr; grid-template-rows: auto 50vh; }
+    #panel { border-right: 0; border-bottom: 1px solid var(--border); max-height: 50vh; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <aside id="panel">
+    <header>
+      <h1>GeoAsk</h1>
+      <p>Ask a question about 18,110 data centers and 2,401 US cities' license-plate cameras. The agent writes spatial SQL, runs it, and shows you exactly what it ran.</p>
+    </header>
+    <form id="form">
+      <textarea id="q" placeholder="e.g. Which Texas cities have the most data centers per ALPR camera?" required maxlength="500"></textarea>
+      <button id="go" type="submit">Ask</button>
+    </form>
+    <div id="examples"></div>
+    <div id="out"><div class="status">Pick an example or type a question.</div></div>
+  </aside>
+  <main style="position:relative; min-width:0">
+    <div id="map"></div>
+    <div id="legend" class="legend" hidden></div>
+    <div class="credit">Data centers © <a href="https://github.com/Ringmast4r/Global-Data-Center-Map">Ringmast4r / Global-Data-Center-Map</a> · Cameras © <a href="https://www.findingflock.com">Finding Flock</a>, OSM contributors (ODbL) · Map © <a href="https://openfreemap.org">OpenFreeMap</a>, OpenStreetMap</div>
+  </main>
+</div>
+
+<script>
+const COLORS = ['--layer-0', '--layer-1', '--layer-2', '--layer-3'].map(v => getComputedStyle(document.documentElement).getPropertyValue(v).trim());
+const map = new maplibregl.Map({
+  container: 'map',
+  style: 'https://tiles.openfreemap.org/styles/positron',
+  center: [-40, 30], zoom: 1.6, attributionControl: false,
+});
+map.addControl(new maplibregl.NavigationControl(), 'top-left');
+let layerIds = [];
+
+function clearLayers() {
+  for (const id of layerIds) { if (map.getLayer(id)) map.removeLayer(id); }
+  for (const id of new Set(layerIds.map(i => i.split('::')[0]))) { if (map.getSource(id)) map.removeSource(id); }
+  layerIds = [];
+  document.getElementById('legend').hidden = true;
+}
+
+function bboxOf(fcs) {
+  let b = [Infinity, Infinity, -Infinity, -Infinity];
+  const walk = c => { if (typeof c[0] === 'number') { b[0] = Math.min(b[0], c[0]); b[1] = Math.min(b[1], c[1]); b[2] = Math.max(b[2], c[0]); b[3] = Math.max(b[3], c[1]); } else c.forEach(walk); };
+  fcs.forEach(fc => fc.features.forEach(f => f.geometry && walk(f.geometry.coordinates)));
+  return isFinite(b[0]) ? b : null;
+}
+
+function renderLayers(layers) {
+  clearLayers();
+  const legend = document.getElementById('legend');
+  legend.innerHTML = '';
+  layers.forEach((L, i) => {
+    const src = 'layer' + i, color = COLORS[i % COLORS.length];
+    map.addSource(src, { type: 'geojson', data: L.geojson });
+    const isPoly = L.geojson.features.some(f => f.geometry && /Polygon/.test(f.geometry.type));
+    if (L.style === 'heat') {
+      map.addLayer({ id: src + '::heat', type: 'heatmap', source: src, paint: { 'heatmap-radius': 18, 'heatmap-opacity': .75 } });
+      layerIds.push(src + '::heat');
+    } else if (isPoly) {
+      map.addLayer({ id: src + '::fill', type: 'fill', source: src, paint: { 'fill-color': color, 'fill-opacity': .25 } });
+      map.addLayer({ id: src + '::line', type: 'line', source: src, paint: { 'line-color': color, 'line-width': 1.2 } });
+      layerIds.push(src + '::fill', src + '::line');
+    } else {
+      map.addLayer({ id: src + '::pt', type: 'circle', source: src, paint: {
+        'circle-radius': ['interpolate', ['linear'], ['zoom'], 2, 3, 10, 7], 'circle-color': color,
+        'circle-opacity': .8, 'circle-stroke-color': '#fff', 'circle-stroke-width': .8 } });
+      layerIds.push(src + '::pt');
+    }
+    const row = document.createElement('div');
+    row.innerHTML = `<span class="sw" style="background:${color}"></span>${esc(L.name)} <span style="color:var(--muted)">(${L.geojson.features.length})</span>`;
+    legend.appendChild(row);
+  });
+  legend.hidden = layers.length === 0;
+  const b = bboxOf(layers.map(l => l.geojson));
+  if (b) map.fitBounds([[b[0], b[1]], [b[2], b[3]]], { padding: 60, maxZoom: 11, duration: 800 });
+}
+
+map.on('click', e => {
+  const feats = map.queryRenderedFeatures(e.point, { layers: layerIds.filter(i => map.getLayer(i)) });
+  if (!feats.length) return;
+  const p = feats[0].properties;
+  const html = Object.entries(p).slice(0, 10).map(([k, v]) => `<b>${esc(k)}</b>: ${esc(String(v))}`).join('<br>');
+  new maplibregl.Popup().setLngLat(e.lngLat).setHTML(html).addTo(map);
+});
+map.on('mousemove', e => {
+  const ids = layerIds.filter(i => map.getLayer(i));
+  map.getCanvas().style.cursor = ids.length && map.queryRenderedFeatures(e.point, { layers: ids }).length ? 'pointer' : '';
+});
+
+function esc(s) { return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+
+// Minimal markdown: tables, bold, line breaks.
+function md(text) {
+  const lines = text.split('\n'); let out = [], i = 0;
+  while (i < lines.length) {
+    if (/^\s*\|.*\|\s*$/.test(lines[i]) && i + 1 < lines.length && /^\s*\|[\s:|-]+\|\s*$/.test(lines[i + 1])) {
+      const rows = []; rows.push(lines[i]); i += 2;
+      while (i < lines.length && /^\s*\|.*\|\s*$/.test(lines[i])) rows.push(lines[i++]);
+      const cells = r => r.trim().slice(1, -1).split('|').map(c => inline(c.trim()));
+      out.push('<table><thead><tr>' + cells(rows[0]).map(c => `<th>${c}</th>`).join('') + '</tr></thead><tbody>' +
+        rows.slice(1).map(r => '<tr>' + cells(r).map(c => `<td>${c}</td>`).join('') + '</tr>').join('') + '</tbody></table>');
+    } else { out.push(inline(lines[i++]) + '\n'); }
+  }
+  return out.join('');
+  function inline(s) { return esc(s).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/`(.+?)`/g, '<code>$1</code>'); }
+}
+
+function renderAnswer(a) {
+  const out = document.getElementById('out');
+  const steps = a.steps.map((s, i) => {
+    const meta = s.row_count != null ? `${s.row_count}${s.truncated ? '+' : ''} rows · ${s.elapsed_ms} ms` : `${s.elapsed_ms} ms`;
+    const sql = s.input.sql ? `<pre>${esc(s.input.sql.trim())}</pre>` : '';
+    const purpose = s.input.purpose || s.input.layer_name || (s.tool === 'get_schema' ? 'read table and column list' : '');
+    let preview = '';
+    if (s.preview && s.preview.length) {
+      const cols = Object.keys(s.preview[0]);
+      preview = `<div class="preview"><table><thead><tr>${cols.map(c => `<th>${esc(c)}</th>`).join('')}</tr></thead><tbody>` +
+        s.preview.map(r => '<tr>' + cols.map(c => `<td>${esc(fmt(r[c]))}</td>`).join('') + '</tr>').join('') + '</tbody></table></div>';
+    }
+    const err = s.error ? `<pre class="err">${esc(s.error)}</pre>` : '';
+    return `<details class="step"${i === a.steps.length - 1 ? ' open' : ''}><summary><span class="${s.ok ? 'ok' : 'err'}">${s.ok ? '✓' : '✗'}</span><span class="tool">${esc(s.tool)}</span><span>${esc(purpose)}</span><span class="meta">${meta}</span></summary>${sql}${err}${preview}</details>`;
+  }).join('');
+  out.innerHTML = `<div class="answer">${md(a.text)}</div>
+    <div class="trace"><h2>What the agent ran (${a.steps.length} step${a.steps.length === 1 ? '' : 's'})</h2>${steps}</div>
+    <div class="foot">${esc(a.model)} · ${(a.elapsed_ms / 1000).toFixed(1)} s · ${a.input_tokens.toLocaleString()} in / ${a.output_tokens.toLocaleString()} out tokens</div>`;
+  renderLayers(a.layers);
+}
+function fmt(v) { if (v == null) return ''; if (typeof v === 'object') return JSON.stringify(v).slice(0, 60); return typeof v === 'number' && !Number.isInteger(v) ? v.toFixed(3) : String(v); }
+
+async function ask(q) {
+  const out = document.getElementById('out'), go = document.getElementById('go');
+  go.disabled = true;
+  out.innerHTML = `<div class="status">Thinking… writing and running SQL (usually 10–40 s)</div>`;
+  try {
+    const r = await fetch('/api/ask', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ question: q }) });
+    if (!r.ok) { const d = await r.json().catch(() => ({})); throw new Error(d.detail || r.statusText); }
+    renderAnswer(await r.json());
+    try { history.replaceState(null, '', '?q=' + encodeURIComponent(q)); } catch {}
+  } catch (e) {
+    out.innerHTML = `<div class="status error">Error: ${esc(e.message)}</div>`;
+  } finally { go.disabled = false; }
+}
+
+document.getElementById('form').addEventListener('submit', e => { e.preventDefault(); const q = document.getElementById('q').value.trim(); if (q) ask(q); });
+document.getElementById('q').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); document.getElementById('form').requestSubmit(); } });
+
+fetch('/api/examples').then(r => r.json()).then(list => {
+  const box = document.getElementById('examples');
+  list.forEach(q => { const b = document.createElement('button'); b.type = 'button'; b.textContent = q; b.onclick = () => { document.getElementById('q').value = q; ask(q); }; box.appendChild(b); });
+  const pre = new URLSearchParams(location.search).get('q');
+  if (pre) { document.getElementById('q').value = pre; ask(pre); }
+});
+</script>
+</body>
+</html>
