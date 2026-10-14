@@ -1,0 +1,16 @@
+# Render blueprint: deploy GeoAsk as a free Docker web service.
+# Set ANTHROPIC_API_KEY in the Render dashboard (it is marked sync: false so it is never committed).
+services:
+  - type: web
+    name: geoask
+    runtime: docker
+    plan: free
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: GEOASK_PER_IP_PER_HOUR
+        value: "10"
+      - key: GEOASK_PER_DAY
+        value: "150"
+      - key: PORT
+        value: "7860"
