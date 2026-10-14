@@ -45,7 +45,12 @@ OPERATOR_ALIASES = {
     r"^google( cloud)?$": "Google",
     r"^equinix.*$": "Equinix",
     r"^centurylink$": "Lumen",
+    r"^(meta|meta, inc\.|facebook)$": "Meta",
+    r"^oracle( cloud infrastructure)?$": "Oracle",
+    r"^apple( inc\.)?$": "Apple",
 }
+# "DC 11 DE LLC (Amazon)" style: a shell company with the real operator in parentheses.
+_PAREN_BRAND = re.compile(r"\(([^()]+)\)\s*$")
 
 
 def normalize_state(state: str | None, country: str | None) -> str | None:
@@ -62,6 +67,9 @@ def normalize_operator(company: str | None) -> str | None:
     if not isinstance(company, str) or not company.strip():
         return None
     c = company.strip()
+    m = _PAREN_BRAND.search(c)
+    if m and len(m.group(1).split()) <= 3:
+        c = m.group(1).strip()
     low = c.lower()
     for pattern, canon in OPERATOR_ALIASES.items():
         if re.match(pattern, low):

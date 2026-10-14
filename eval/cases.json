@@ -46,7 +46,7 @@
   {
     "id": "aws_near_msft",
     "question": "How many AWS data centers are within 50 km of a Microsoft data center?",
-    "gold_sql": "SELECT count(DISTINCT a.id) FROM datacenters a JOIN datacenters m ON a.operator='Amazon AWS' AND m.operator='Microsoft' AND a.has_coords AND m.has_coords AND ST_Distance_Sphere(a.geom, m.geom) < 50000",
+    "gold_sql": "SELECT count(DISTINCT a.id) FROM datacenters a JOIN datacenters m ON a.operator='Amazon AWS' AND m.operator='Microsoft' AND a.has_coords AND m.has_coords AND ST_Distance_Sphere(a.geom, m.geom) <= 50000",
     "expect_layer": false
   },
   {
