@@ -48,7 +48,20 @@ declined rather than guessed.
 python eval/run_eval.py
 ```
 
-_(results table filled in below after the first full run)_
+Latest run (`claude-opus-5-5`, medium effort, 2026-10-14):
+
+| Metric | Value |
+|---|---|
+| Cases passed | **20 / 20** |
+| Wall time | 236 s (12 s median per question) |
+| Tokens | 171k input · 18k output (≈ $1.05 for the whole run) |
+| SQL retries | 3 cases needed one failed query before recovering |
+
+Case types: counts and aggregates (8), spatial joins and distance (3), cross-dataset
+joins (2), map-layer requests (3), data-quality questions (2), unanswerable (2).
+The eval caught a real ETL bug on its first run: shell-company operator names like
+`DC 11 DE LLC (Amazon)` weren't mapped to AWS. The agent found them with a `LIKE`
+query; the gold query didn't. Fixed in the ETL, and the gold now agrees.
 
 ## Run it
 
@@ -87,6 +100,8 @@ pytest
   the question comes last.
 - **Model:** `claude-opus-5-5` with adaptive thinking at medium effort. A typical
   question costs ~10k input / ~1k output tokens and takes 10–40 s.
+- **Public demo guard.** `app.py` caps questions per visitor per hour and per day
+  (`GEOASK_PER_IP_PER_HOUR`, `GEOASK_PER_DAY`) so the demo can run on a fixed budget.
 
 ## Attribution
 
