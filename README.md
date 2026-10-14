@@ -4,7 +4,9 @@ GeoAsk is an LLM agent that answers plain-English questions about geospatial dat
 writing spatial SQL, running it against a read-only DuckDB database, and showing you
 exactly what it ran. Every number in the answer traces back to a query you can see.
 
-**Live demo:** _(coming)_ · **Stack:** Python · DuckDB spatial · Claude API (tool use) · FastAPI · MapLibre
+**Live demo:** _(coming)_ · **Stack:** Python · DuckDB spatial · Claude API (tool use) · FastAPI · MapLibre · rasterio
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/Drusinek1/geoask)
 
 ![GeoAsk screenshot](docs/screenshot.png)
 
