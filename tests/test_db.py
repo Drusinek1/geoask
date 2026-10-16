@@ -22,6 +22,25 @@ def test_rejects_non_readonly(db, sql):
         db.run_sql(sql)
 
 
+@pytest.mark.parametrize("sql", [
+    "SELECT content FROM read_text('requirements.txt')",
+    "SELECT content FROM read_text('/proc/self/environ')",
+    "SELECT * FROM read_csv('data/raw/census_place_population.csv')",
+    "SELECT * FROM glob('*')",
+    "SELECT * FROM read_parquet('x.parquet')",
+    "SELECT * FROM ST_Read('data/raw/ccap/2021_CCAP_J1466617tR0_C0.tif')",
+])
+def test_blocks_file_access(db, sql):
+    with pytest.raises(QueryError):
+        db.run_sql(sql)
+
+
+def test_cannot_reenable_external_access(db):
+    with pytest.raises(QueryError):
+        db.run_sql("SELECT 1 FROM (SELECT current_setting('enable_external_access')) t, "
+                   "(SET enable_external_access = true)")
+
+
 def test_basic_count(db):
     r = db.run_sql("SELECT count(*) AS n FROM datacenters")
     assert r.rows[0][0] == 18110

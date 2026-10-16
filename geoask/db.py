@@ -51,6 +51,14 @@ class GeoDB:
             raise FileNotFoundError(f"database not found: {self.path} (run etl/build_db.py)")
         self._con = duckdb.connect(str(self.path), read_only=True)
         self._con.execute("LOAD spatial;")
+        # Sandbox: no file/URL access from SQL (read_text, read_csv, glob, COPY...), and freeze
+        # settings so a query can't turn it back on. The keyword filter in validate() is a
+        # second layer; this is the one that actually holds.
+        # Connections to the same file share one DuckDB instance, so only the first locks it.
+        if not self._con.execute("SELECT current_setting('lock_configuration')").fetchone()[0]:
+            self._con.execute("SET enable_external_access = false;")
+            self._con.execute("SET lock_configuration = true;")
+        assert self._con.execute("SELECT current_setting('enable_external_access')").fetchone()[0] is False
         self._lock = threading.Lock()
 
     # -- schema --------------------------------------------------------------
